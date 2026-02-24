@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: ticketing-reactive-test
+
+# Override AWS to connect to LocalStack during integration tests
+aws:
+  region: us-east-1
+  endpoint-override: http://localhost:4566
+  access-key-id: test
+  secret-access-key: test
+  sqs:
+    order-queue-url: http://localhost:4566/000000000000/purchase-orders-queue.fifo
+
+app:
+  reservation:
+    release-job-delay-ms: 999999999
+
+logging:
+  level:
+    com.nequi.ticketing: DEBUG

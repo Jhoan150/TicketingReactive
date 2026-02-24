@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: ticketing-reactive
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ── AWS Configuration ──────────────────────────────────────────────────────────
+aws:
+  region: ${AWS_REGION:us-east-1}
+  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:http://localstack:4566}
+  access-key-id: ${AWS_ACCESS_KEY_ID:test}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:test}
+  sqs:
+    order-queue-url: ${SQS_QUEUE_URL:http://localstack:4566/000000000000/purchase-orders-queue.fifo}
+
+# ── Application Configuration ──────────────────────────────────────────────────
+app:
+  reservation:
+    release-job-delay-ms: ${RESERVATION_RELEASE_DELAY_MS:60000}
+
+logging:
+  level:
+    com.nequi.ticketing: DEBUG
+    software.amazon.awssdk: WARN

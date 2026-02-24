@@ -1,0 +1,96 @@
+### Ticketing Reactive - API Requests Collection
+### Use with VS Code REST Client extension or any tool that supports .http files
+
+@baseUrl = http://localhost:8080/api/v1
+@contentType = application/json
+
+# ─── 1. EVENTS ────────────────────────────────────────────────────────────────
+
+### Create a new event (100 tickets capacity)
+# @name createEvent
+POST {{baseUrl}}/events
+Content-Type: {{contentType}}
+
+{
+  "name": "Coldplay - Music of the Spheres World Tour",
+  "date": "2026-09-15T20:00:00",
+  "venue": "Estadio El Campin - Bogotá",
+  "totalCapacity": 100
+}
+
+### Get event ID from create response
+@eventId = {{createEvent.response.body.eventId}}
+
+---
+
+### List all events with available tickets
+GET {{baseUrl}}/events
+Content-Type: {{contentType}}
+
+---
+
+### Get real-time availability for event
+GET {{baseUrl}}/events/{{eventId}}/availability
+Content-Type: {{contentType}}
+
+---
+
+# ─── 2. ORDERS (Purchase Flow) ────────────────────────────────────────────────
+
+### Create a purchase order (reserve 2 tickets)
+# @name createOrder
+POST {{baseUrl}}/orders
+Content-Type: {{contentType}}
+
+{
+  "eventId": "{{eventId}}",
+  "userId": "user-jhoan-123",
+  "quantity": 2
+}
+
+### Get order ID from response
+@orderId = {{createOrder.response.body.orderId}}
+
+---
+
+### Query order status (poll until CONFIRMED)
+GET {{baseUrl}}/orders/{{orderId}}
+Content-Type: {{contentType}}
+
+---
+
+# ─── 3. ERROR CASES ────────────────────────────────────────────────────────────
+
+### Buy when not enough tickets (conflict test)
+POST {{baseUrl}}/orders
+Content-Type: {{contentType}}
+
+{
+  "eventId": "{{eventId}}",
+  "userId": "user-flood-test",
+  "quantity": 200
+}
+
+---
+
+### Get non-existent event availability (404 test)
+GET {{baseUrl}}/events/non-existent-id/availability
+Content-Type: {{contentType}}
+
+---
+
+### Get non-existent order status (404 test)
+GET {{baseUrl}}/orders/non-existent-order-id
+Content-Type: {{contentType}}
+
+---
+
+### Validate max quantity constraint (should fail: max 10)
+POST {{baseUrl}}/orders
+Content-Type: {{contentType}}
+
+{
+  "eventId": "{{eventId}}",
+  "userId": "user-greedy",
+  "quantity": 15
+}

@@ -1,0 +1,74 @@
+services:
+
+  # ─── Spring Boot Application ─────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticketing-reactive
+    ports:
+      - "8080:8080"
+    environment:
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_OVERRIDE: http://localstack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/purchase-orders-queue.fifo
+      RESERVATION_RELEASE_DELAY_MS: 60000
+    depends_on:
+      localstack-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ticketing-network
+
+  # ─── LocalStack (DynamoDB + SQS) ─────────────────────────────────────────────
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: dynamodb,sqs
+      AWS_DEFAULT_REGION: us-east-1
+      LOCALSTACK_AUTH_TOKEN: ""
+      DEBUG: 0
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4566/_localstack/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ticketing-network
+
+  # ─── Init Container (creates tables and queues) ───────────────────────────────
+  localstack-init:
+    image: amazon/aws-cli:2.20.0
+    container_name: localstack-init
+    environment:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    volumes:
+      - ./docker/init-aws.sh:/init-aws.sh
+    entrypoint: [ "/bin/bash", "/init-aws.sh" ]
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - ticketing-network
+
+volumes:
+  localstack-data:
+
+
+networks:
+  ticketing-network:
+    driver: bridge

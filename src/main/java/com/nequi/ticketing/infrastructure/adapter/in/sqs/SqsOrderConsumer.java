@@ -18,10 +18,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * SQS long-polling consumer for purchase order processing.
- *
- */
 @Component
 public class SqsOrderConsumer {
 

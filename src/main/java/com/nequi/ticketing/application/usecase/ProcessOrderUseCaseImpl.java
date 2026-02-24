@@ -34,7 +34,6 @@ public class ProcessOrderUseCaseImpl implements ProcessOrderUseCase {
         return orderRepository.findById(orderId)
                 .switchIfEmpty(Mono.error(new OrderNotFoundException(orderId)))
                 .flatMap(order -> switch (order.status()) {
-                    // idempotent: already processed
                     case CONFIRMED -> Mono.just(order);
                     case CANCELLED, FAILED -> Mono.just(order);
                     case PENDING, PROCESSING -> processOrder(order);

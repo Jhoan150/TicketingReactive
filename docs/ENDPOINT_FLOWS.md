@@ -62,16 +62,37 @@ Esta documentación detalla la secuencia exacta de llamadas, desde que llega la 
 
 ---
 
-## 5. Disponibilidad en Tiempo Real (`GET /api/v1/events/{id}/availability`)
-**Propósito**: Streaming de datos (SSE) sobre el stock actual.
+## 5. Disponibilidad PUNTUAL (`GET /api/v1/events/{id}/availability`)
+**Propósito**: Obtener una "foto" inmediata del stock.
 
 1.  **Adaptador In (Web)**: `EventController.getEventAvailability(id)`
-    - Configura el header `text/event-stream`.
 2.  **Caso de Uso (Application)**: `GetEventAvailabilityUseCaseImpl.execute(id)`
-3.  **Flujo Reactivo**: 
-    - Emite el valor actual del stock.
-    - (Opcional) Se suscribe a cambios mediante el patrón Observer o Polling reactivo.
-4.  **Respuesta**: Mantiene la conexión abierta enviando eventos de stock.
+3.  **Respuesta**: Devuelve un `Mono<AvailabilityResponse>` con el número actual.
+
+---
+
+## 6. Disponibilidad en TIEMPO REAL (`GET /api/v1/events/{id}/availability/stream`)
+**Propósito**: Streaming de datos (SSE) sobre el stock actual.
+
+1.  **Adaptador In (Web)**: `EventController.getEventAvailabilityStream(id)`
+    - Fuerza el Media Type `text/event-stream`.
+2.  **Lógica Reactiva (Controller)**: 
+    - Crea un `Flux.interval(Duration.ofSeconds(5))`.
+    - En cada "tick", llama al `GetEventAvailabilityUseCaseImpl`.
+3.  **Servidor**: Mantiene la conexión HTTP abierta enviando un evento de stock cada 5 segundos.
+
+---
+
+## 7. Reporte de Resumen de Evento (`GET /api/v1/events/{id}/summary`)
+**Propósito**: Generar indicadores de inventario (cuántos tickets hay en cada estado). Utilizado para auditoría y reportes operativos.
+
+1.  **Adaptador In (Web)**: `EventController.getEventSummary(id)`
+2.  **Caso de Uso (Application)**: `GetEventSummaryUseCaseImpl.execute(id)`
+    - Recupera los metadatos del evento.
+    - Realiza una consulta paralela (Flux) al repositorio de tickets agrupando por cada estado disponible (`AVAILABLE`, `SOLD`, `RESERVED`, etc.).
+3.  **Adaptador Out (Infrastructure)**: `TicketDynamoDbAdapter.countByEventIdAndStatus`
+    - Ejecuta un `Query` sobre el GSI `eventId-status-index` para contar de forma eficiente.
+4.  **Respuesta**: Devuelve un JSON con los contadores por cada estado.
 
 ---
 

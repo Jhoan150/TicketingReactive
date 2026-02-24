@@ -7,9 +7,7 @@ import com.nequi.ticketing.domain.port.in.CreateEventUseCase;
 import com.nequi.ticketing.domain.port.out.EventRepositoryPort;
 import com.nequi.ticketing.domain.port.out.TicketRepositoryPort;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

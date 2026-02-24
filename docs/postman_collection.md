@@ -21,10 +21,23 @@ curl --location 'http://localhost:8080/api/v1/events' \
 curl --location 'http://localhost:8080/api/v1/events'
 ```
 
-### Consultar disponibilidad específica de un evento
+### Consultar disponibilidad específica de un evento (Puntual)
 *(Reemplaza {eventId} con un ID real)*
 ```bash
 curl --location 'http://localhost:8080/api/v1/events/{eventId}/availability'
+```
+
+### Consultar disponibilidad en TIEMPO REAL (Streaming SSE)
+*(Reemplaza {eventId} con un ID real. Mantendrá la conexión abierta para recibir actualizaciones)*
+```bash
+curl --location --header 'Accept: text/event-stream' \
+'http://localhost:8080/api/v1/events/{eventId}/availability/stream'
+```
+
+### Consultar resumen de inventario (Reporte de Evento)
+*(Detalla cuántos tickets hay en cada estado: SOLD, RESERVED, AVAILABLE, etc)*
+```bash
+curl --location 'http://localhost:8080/api/v1/events/{eventId}/summary'
 ```
 
 ---

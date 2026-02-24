@@ -29,8 +29,21 @@ Content-Type: {{contentType}}
 
 ---
 
-### Get real-time availability for event
+### Get puntual availability for event
 GET {{baseUrl}}/events/{{eventId}}/availability
+Content-Type: {{contentType}}
+
+---
+
+### Get REAL-TIME availability stream (SSE)
+# This will keep the connection open and receive updates every 5s
+GET {{baseUrl}}/events/{{eventId}}/availability/stream
+Accept: text/event-stream
+
+---
+
+### Get event inventory summary (Reporting)
+GET {{baseUrl}}/events/{{eventId}}/summary
 Content-Type: {{contentType}}
 
 ---

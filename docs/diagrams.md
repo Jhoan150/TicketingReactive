@@ -1,4 +1,4 @@
-# Diagramas de Arquitectura - Nequi Ticketing Reactive
+# Diagramas de Arquitectura - Ticketing Reactive
 
 Este documento contiene la representación visual de la arquitectura y los flujos críticos del sistema.
 
@@ -59,6 +59,7 @@ sequenceDiagram
         alt Éxito (Stock disponible)
             D-->>UC: OK (version updated)
             UC->>D: Create Order (PENDING)
+            Note over UC,C: En un flujo real: Aquí se redirige a Pasarela de Pagos
             UC->>Q: Enviar Mensaje (OrderCreated)
             UC-->>A: OrderResponse (202 Accepted)
             A-->>C: 202 Accepted (orderId)
@@ -69,27 +70,115 @@ sequenceDiagram
         end
     end
 
-    Note over Q,D: Procesamiento Asíncrono
     Q->>UC: Consumer: ProcessOrder
     UC->>D: Finalizar Tickets (SOLD)
     UC->>D: Update Order (COMPLETED)
 ```
 
-## 3. Modelo de Datos (DynamoDB)
+## 3. Diagrama de Casos de Uso (UML)
 
-### Tabla: `events`
-- `eventId` (Hash Key)
-- `availableTickets`
-- `version` (para Optimistic Locking)
+Este mapa muestra las interacciones de los actores con las funcionalidades del sistema.
 
-### Tabla: `tickets`
-- `ticketId` (Hash Key)
-- `eventId` (GSI)
-- `status` (AVAILABLE, SOLD, RESERVED)
-- `orderId` (GSI)
+```mermaid
+graph LR
+    Admin[Administrador]
+    User[Cliente]
+    Job[Sistema / Cron Job]
 
-### Tabla: `orders`
-- `orderId` (Hash Key)
-- `status` (PENDING, COMPLETED, FAILED)
-- `totalAmount`
+    subgraph "Ticketing Platform"
+        UC1(Crear Evento e Inventario)
+        UC2(Listar Eventos Disponibles)
+        UC3(Reservar Tickets)
+        UC4(Consultar Estado de Orden)
+        UC5(Monitorear Disponibilidad SSE)
+        UC6(Liberar Reservas Expiradas)
+    end
+
+    Admin --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    Job --> UC6
+```
+
+## 4. Flujo: Creación de Evento (Secuencia)
+
+```mermaid
+sequenceDiagram
+    participant A as Administrador
+    participant C as EventController
+    participant UC as CreateEventUseCase
+    participant ER as EventRepository
+    participant TR as TicketRepository
+
+    A->>C: POST /events (name, capacity)
+    C->>UC: execute(command)
+    UC->>ER: save(EventEntity)
+    Note over UC,TR: Generación de N Tickets
+    UC->>TR: saveAll(List<Ticket>)
+    TR-->>UC: OK
+    UC-->>C: EventResponse
+    C-->>A: 201 Created
+```
+
+## 5. Flujo: Disponibilidad en Tiempo Real
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant API as EventController
+    participant UC as GetAvailabilityUseCase
+    participant D as DynamoDB
+
+    C->>API: GET /events/{id}/availability
+    API->>UC: execute(id)
+    loop Cada intervalo/cambio
+        UC->>D: findById(id)
+        D-->>UC: Event (stock actual)
+        UC-->>API: Stream Data
+        API-->>C: Data: {available: 45}
+    end
+```
+
+## 6. Diagrama de Estados: Ciclo de Vida del Ticket
+
+Indispensable para entender las "Notas Generales" del negocio.
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE: Creación de Evento
+    AVAILABLE --> RESERVED: POST /orders (Reserva Temporal)
+    AVAILABLE --> COMPLIMENTARY: Asignación Manual
+    RESERVED --> AVAILABLE: Expiración (10 min) / Cancelación
+    RESERVED --> PENDING_CONFIRMATION: Inicio de Pago
+    PENDING_CONFIRMATION --> SOLD: Confirmación Exitosa (SQS)
+    PENDING_CONFIRMATION --> AVAILABLE: Fallo de Pago
+    SOLD --> [*]: Estado Final
+    COMPLIMENTARY --> [*]: Estado Final
+```
+
+## 8. Arquitectura de Despliegue en Producción
+
+Esta arquitectura está diseñada para maxima disponibilidad, seguridad y escalabilidad automática en la nube.
+
+```mermaid
+graph LR
+    User((Usuario/Bot)) --> AGW[AWS API Gateway]
+    AGW --> WAF[AWS WAF - Seguridad]
+    WAF --> ALB[Application Load Balancer]
+    
+    subgraph "Amazon EKS (Kubernetes Cluster)"
+        Service[K8s Service] --> Pod1[Pod: Ticketing App]
+        Service --> Pod2[Pod: Ticketing App]
+        Pod1 -.-> SM[AWS Secrets Manager]
+    end
+    
+    ALB --> Service
+    
+    Pod1 --> DDB[(DynamoDB Serverless)]
+    Pod1 --> SQS[[SQS FIFO Queue]]
+    
+    Pod2 --> DDB
+    Pod2 --> SQS
 ```

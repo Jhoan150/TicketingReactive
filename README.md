@@ -1,4 +1,4 @@
-# Nequi Ticketing Reactive Platform
+# Ticketing Reactive Platform
 
 Sistema de boletería de alto rendimiento construido con **Java 25**, **Spring Boot 4 (WebFlux)** y arquitectura reactiva. Diseñado para manejar picos de tráfico masivos (como la venta de entradas para conciertos) utilizando procesos no bloqueantes y persistencia escalable.
 

@@ -27,10 +27,7 @@ public class TicketDynamoDbAdapter implements TicketRepositoryPort {
     private static final String ORDER_INDEX = "orderId-index";
 
     private final DynamoDbAsyncTable<TicketEntity> table;
-    private final DynamoDbEnhancedAsyncClient enhancedClient;
-
     public TicketDynamoDbAdapter(DynamoDbEnhancedAsyncClient enhancedClient) {
-        this.enhancedClient = enhancedClient;
         this.table = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(TicketEntity.class));
     }
 
@@ -96,6 +93,24 @@ public class TicketDynamoDbAdapter implements TicketRepositoryPort {
     public Flux<Ticket> saveAll(List<Ticket> tickets) {
         return Flux.fromIterable(tickets)
                 .flatMap(this::save);
+    }
+
+    @Override
+    public Mono<Long> countByEventIdAndStatus(String eventId, TicketStatus status) {
+        DynamoDbAsyncIndex<TicketEntity> index = table.index(EVENT_STATUS_INDEX);
+
+        Key key = Key.builder()
+                .partitionValue(eventId)
+                .sortValue(status.name())
+                .build();
+
+        QueryEnhancedRequest request = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .build();
+
+        return Flux.from(index.query(request))
+                .map(page -> (long) page.items().size())
+                .reduce(0L, Long::sum);
     }
 
     // ── Mapping ─────────────────────────────────────────────────────────────

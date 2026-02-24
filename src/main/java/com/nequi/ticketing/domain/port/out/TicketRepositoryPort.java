@@ -63,4 +63,13 @@ public interface TicketRepositoryPort {
      * @return stream of saved tickets
      */
     Flux<Ticket> saveAll(List<Ticket> tickets);
+
+    /**
+     * Counts tickets for a given event and status.
+     *
+     * @param eventId the event identifier
+     * @param status  the ticket status
+     * @return the count of matching tickets
+     */
+    Mono<Long> countByEventIdAndStatus(String eventId, TicketStatus status);
 }

@@ -1,6 +1,5 @@
 package com.nequi.ticketing.application.usecase;
 
-import com.nequi.ticketing.domain.enums.TicketStatus;
 import com.nequi.ticketing.domain.model.Ticket;
 import com.nequi.ticketing.domain.port.in.ReleaseExpiredReservationsUseCase;
 import com.nequi.ticketing.domain.port.out.EventRepositoryPort;

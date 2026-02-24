@@ -5,7 +5,6 @@ import com.nequi.ticketing.domain.exception.EventNotFoundException;
 import com.nequi.ticketing.domain.exception.OptimisticLockException;
 import com.nequi.ticketing.domain.exception.TicketNotAvailableException;
 import com.nequi.ticketing.domain.model.Order;
-import com.nequi.ticketing.domain.model.Ticket;
 import com.nequi.ticketing.domain.port.in.ReserveTicketsUseCase;
 import com.nequi.ticketing.domain.port.out.EventRepositoryPort;
 import com.nequi.ticketing.domain.port.out.OrderQueuePort;

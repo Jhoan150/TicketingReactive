@@ -3,8 +3,6 @@ package com.nequi.ticketing.infrastructure.adapter.out.dynamodb.entity;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 
 /**
  * DynamoDB table entity for Event persistence.

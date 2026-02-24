@@ -67,7 +67,7 @@ graph LR
         P2((EventRepositoryPort))
     end
 
-    subgraph "Adaptadores OUT (DynamoDB/SQS)"
+    subgraph "Adapt OUT(DynamoDB/SQS)"
         A2[EventDynamoDbAdapter]
     end
 
@@ -77,9 +77,3 @@ graph LR
 ```
 
 ---
-
-## Diferencia Principal
-- **IN**: Alguien de afuera nos "llama" (Web, SQS).
-- **OUT**: Nosotros "llamamos" a alguien afuera (Base de datos, servicios externos).
-
-¿Te queda más claro el rol de cada componente con esta separación?

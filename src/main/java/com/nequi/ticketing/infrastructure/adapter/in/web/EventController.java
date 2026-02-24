@@ -4,13 +4,17 @@ import com.nequi.ticketing.domain.model.Event;
 import com.nequi.ticketing.domain.port.in.CreateEventUseCase;
 import com.nequi.ticketing.domain.port.in.GetAvailableEventsUseCase;
 import com.nequi.ticketing.domain.port.in.GetEventAvailabilityUseCase;
+import com.nequi.ticketing.domain.port.in.GetEventSummaryUseCase;
 import com.nequi.ticketing.infrastructure.adapter.in.web.dto.CreateEventRequest;
 import com.nequi.ticketing.infrastructure.adapter.in.web.dto.EventResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
 
 /**
  * WebFlux REST controller for Event endpoints.
@@ -23,13 +27,16 @@ public class EventController {
     private final CreateEventUseCase createEventUseCase;
     private final GetAvailableEventsUseCase getAvailableEventsUseCase;
     private final GetEventAvailabilityUseCase getEventAvailabilityUseCase;
+    private final GetEventSummaryUseCase getEventSummaryUseCase;
 
     public EventController(CreateEventUseCase createEventUseCase,
                            GetAvailableEventsUseCase getAvailableEventsUseCase,
-                           GetEventAvailabilityUseCase getEventAvailabilityUseCase) {
+                           GetEventAvailabilityUseCase getEventAvailabilityUseCase,
+                           GetEventSummaryUseCase getEventSummaryUseCase) {
         this.createEventUseCase = createEventUseCase;
         this.getAvailableEventsUseCase = getAvailableEventsUseCase;
         this.getEventAvailabilityUseCase = getEventAvailabilityUseCase;
+        this.getEventSummaryUseCase = getEventSummaryUseCase;
     }
 
     /**
@@ -70,6 +77,29 @@ public class EventController {
     public Mono<AvailabilityResponse> getEventAvailability(@PathVariable String eventId) {
         return getEventAvailabilityUseCase.execute(eventId)
                 .map(count -> new AvailabilityResponse(eventId, count));
+    }
+
+    /**
+     * Real-time stream of available tickets using Server-Sent Events (SSE).
+     * Useful for live dashboards or high-urgency purchase flows.
+     */
+    @GetMapping(value = "/{eventId}/availability/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<AvailabilityResponse> getEventAvailabilityStream(@PathVariable String eventId) {
+        return Flux.interval(Duration.ofSeconds(5))
+                .flatMap(tick -> getEventAvailabilityUseCase.execute(eventId))
+                .map(count -> new AvailabilityResponse(eventId, count));
+    }
+
+    /**
+     * Returns a detailed summary of an event's inventory (SOLD, RESERVED, etc).
+     * Addresses audit and reporting requirements.
+     *
+     * @param eventId the event identifier
+     * @return summary with counts per status
+     */
+    @GetMapping("/{eventId}/summary")
+    public Mono<GetEventSummaryUseCase.EventSummary> getEventSummary(@PathVariable String eventId) {
+        return getEventSummaryUseCase.execute(eventId);
     }
 
     private EventResponse toResponse(Event event) {

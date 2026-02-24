@@ -2,8 +2,6 @@ package com.nequi.ticketing.infrastructure.adapter.in.web.dto;
 
 import jakarta.validation.constraints.*;
 
-import java.time.LocalDateTime;
-
 /**
  * HTTP request body for creating a new event.
  *
